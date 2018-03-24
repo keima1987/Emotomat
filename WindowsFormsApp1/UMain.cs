@@ -164,7 +164,7 @@ namespace WindowsFormsApp1
 
         public class StreamRoot
         {
-            public StreamClass stream { get; set; } 
+            public StreamClass stream { get; set; }
         }
         // Stream Classes end
         // Channel Classes
@@ -190,7 +190,7 @@ namespace WindowsFormsApp1
             public int views { get; set; }
         }
         // Channel Classes
-        
+
         private void ScrollToBottom() // Scrolls Webbrowser Control to the bottom
         {
             // MOST IMP : processes all windows messages queue
@@ -249,11 +249,11 @@ namespace WindowsFormsApp1
         }
 
 
-        private string GetBadges(string ID,string Raw)
+        private string GetBadges(string ID, string Raw)
         {
             string html = string.Empty;
-            string BadgeURL="";
-            string url = @"https://api.twitch.tv/kraken/chat/"+ID+"/badges";
+            string BadgeURL = "";
+            string url = @"https://api.twitch.tv/kraken/chat/" + ID + "/badges";
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Accept = "application/vnd.twitchtv.v5+json";
             request.Headers.Add("Client-ID", "0uwepl5f8n0fv7hcs282589wx76phc");
@@ -265,7 +265,8 @@ namespace WindowsFormsApp1
             {
                 html = reader.ReadToEnd();
                 BadgeRoot r = JsonConvert.DeserializeObject<BadgeRoot>(html);
-                switch (Raw) {
+                switch (Raw)
+                {
                     case "admin": { BadgeURL = r.admin.image; break; }
                     case "broadcaster": { BadgeURL = r.broadcaster.image; break; }
                     case "global_mod": { BadgeURL = r.global_mod.image; break; }
@@ -334,7 +335,7 @@ namespace WindowsFormsApp1
             btnSend.Enabled = false;
             webChat.Navigate("about:blank");
             tmStream.Enabled = false;
-        
+
             lbEmotes.Enabled = false;
             btnSendEmotes.Enabled = false;
             speCount.Enabled = false;
@@ -358,24 +359,33 @@ namespace WindowsFormsApp1
             lblLink.Enabled = false;
         }
 
+        public string Between(string Text, string FirstString, string LastString)
+        {
+            string STR = Text;
+            string STRFirst = FirstString;
+            string STRLast = LastString;
+            string FinalString;
+
+            int Pos1 = STR.IndexOf(FirstString) + FirstString.Length;
+            int Pos2 = STR.IndexOf(LastString);
+            FinalString = STR.Substring(Pos1, Pos2 - Pos1);
+            return FinalString;
+        }
+
         private void OnMessageReceived(object sender, OnMessageReceivedArgs e)
         {
             string states = "";
             string ChatM = "";
             string content = "";
             string Raw = e.ChatMessage.RawIrcMessage;
-            if (Raw.Contains("subscriber/"))
-            {
-                states += "<img src=\"" + GetBadges(C_ID, "subscriber") + "\"> ";
-            }
             if (Raw.Contains("admin/"))
             {
                 states += "<img src=\"" + GetBadges(C_ID, "admin") + "\"> ";
             }
-            if (Raw.Contains("bits/"))
+            /*if (Raw.Contains("bits/"))
             {
                 states += "[B] ";
-            }
+            }*/
             if (Raw.Contains("global_mod/"))
             {
                 states += "<img src=\"" + GetBadges(C_ID, "global_mod") + "\"> ";
@@ -399,11 +409,15 @@ namespace WindowsFormsApp1
             }
             if (Raw.Contains("turbo/"))
             {
-                states += "<img src=\""+GetBadges(C_ID, "turbo")+"\"> ";
+                states += "<img src=\"" + GetBadges(C_ID, "turbo") + "\"> ";
+            }
+            if (Raw.Contains("subscriber/"))
+            {
+                states += "<img src=\"" + GetBadges(C_ID, "subscriber") + "\"> ";
             }
             if (Raw.Contains("NOTICE"))
             {
-                string Notice = Raw.Substring(Raw.LastIndexOf(':') + 1);
+                string Notice = Raw.Substring(Raw.LastIndexOf("#" + edtChannel.Text + " :") + 1);
                 if (webChat.InvokeRequired)
                 {
                     Action act = () => this.webChat.Document.Body.InnerHtml += Notice;
@@ -412,9 +426,23 @@ namespace WindowsFormsApp1
                     webChat.Invoke(act);
                 }
             }
+
+            if (Raw.Contains("USERNOTICE"))
+            {
+                string Notice = Between(Raw, ";system-msg=", ";tmi-sent-ts=");
+                Notice = Notice.Replace("\\s", " ");
+                if (webChat.InvokeRequired)
+                {
+                    Action act = () => this.webChat.Document.Body.InnerHtml += Notice;
+                    webChat.Invoke(act);
+                    act = () => ScrollToBottom();
+                    webChat.Invoke(act);
+                }
+            }
+
             DispName = states + e.ChatMessage.DisplayName;
             ChatM = e.ChatMessage.Message;
-            ChatM = Regex.Replace(ChatM, @"^(http|https|ftp)\://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*$","<a href=\"$1\">$1</a>");
+            ChatM = Regex.Replace(ChatM, @"^(http|https|ftp)\://[a-zA-Z0-9\-\.]+\.[a-zA-Z]{2,3}(:[a-zA-Z0-9]*)?/?([a-zA-Z0-9\-\._\?\,\'/\\\+&amp;%\$#\=~])*$", "<a href=\"$1\">$1</a>");
             for (int i = 0; i < e.ChatMessage.EmoteSet.Emotes.Count; i++)
             {
                 ChatM = ChatM.Replace(e.ChatMessage.EmoteSet.Emotes[i].Name, "<img src=\"" + e.ChatMessage.EmoteSet.Emotes[i].ImageUrl + "\">");
@@ -444,17 +472,17 @@ namespace WindowsFormsApp1
 
         private void OnLog(object sender, OnLogArgs e)
         {
-              if (RichLog.InvokeRequired)
-              { 
-                   if (!(e.Data.Contains("PRIVMSG")) && !(e.Data.Contains("Unaccounted for:"))) //filter PRIVMSG
-                   {
+            if (RichLog.InvokeRequired)
+            {
+                if (!(e.Data.Contains("PRIVMSG")) && !(e.Data.Contains("Unaccounted for:"))) //filter PRIVMSG
+                {
                     Action act = () => RichLog.AppendText(e.DateTime + " " + e.BotUsername + " " + e.Data + "\r\n");
                     RichLog.Invoke(act);
-                   }
+                }
             }
             if (e.Data.Contains("NOTICE") && !(e.Data.Contains("Unaccounted for:")))
             {
-                string Notice = "<div><span style=\"color:#A4A0A0; font-family:Arial,Helvetica,sans-serif; font-size:10pt;\">"+e.Data.Substring(e.Data.LastIndexOf(':') + 1) + "</span></div>";
+                string Notice = "<div><span style=\"color:#A4A0A0; font-family:Arial,Helvetica,sans-serif; font-size:10pt;\">" + e.Data.Substring(e.Data.LastIndexOf(':') + 1) + "</span></div>";
                 if (webChat.InvokeRequired)
                 {
                     Action act = () => this.webChat.Document.Body.InnerHtml += Notice;
@@ -467,9 +495,9 @@ namespace WindowsFormsApp1
 
         private void OnIncorrectLogin(object sender, OnIncorrectLoginArgs e)
         {
-            const string message ="Username or Oauth token wrong";
+            const string message = "Username or Oauth token wrong";
             const string caption = "Login Error";
-            var result = MessageBox.Show(message, caption, MessageBoxButtons.OK,MessageBoxIcon.Error);
+            var result = MessageBox.Show(message, caption, MessageBoxButtons.OK, MessageBoxIcon.Error);
 
             // If the no button was pressed ...
             if (result == DialogResult.OK)
@@ -522,10 +550,10 @@ namespace WindowsFormsApp1
             {
                 states += "<img src=\"" + GetBadges(C_ID, "subscriber") + "\"> ";
             }
-             if (e.SentMessage.UserType.ToString() == "Admin")
-             {
-                 states += "<img src=\"" + GetBadges(C_ID, "admin") + "\"> ";
-             }
+            if (e.SentMessage.UserType.ToString() == "Admin")
+            {
+                states += "<img src=\"" + GetBadges(C_ID, "admin") + "\"> ";
+            }
             if (e.SentMessage.IsModerator)
             {
                 states += "<img src=\"" + GetBadges(C_ID, "mod") + "\"> ";
@@ -590,7 +618,7 @@ namespace WindowsFormsApp1
         private void OnHostingStarted(object sender, OnHostingStartedArgs e)
         {
             string content = "";
-            content = "<div><span style=\"color:#A4A0A0; font-family:Arial,Helvetica,sans-serif; font-size:10pt;\">" + e.HostingChannel + " is now hosting " + e.TargetChannel + " for "+e.Viewers+" viewers.</span></div>";
+            content = "<div><span style=\"color:#A4A0A0; font-family:Arial,Helvetica,sans-serif; font-size:10pt;\">" + e.HostingChannel + " is now hosting " + e.TargetChannel + " for " + e.Viewers + " viewers.</span></div>";
             if (webChat.InvokeRequired)
             {
                 Action act = () => this.webChat.Document.Body.InnerHtml += content;
@@ -635,7 +663,7 @@ namespace WindowsFormsApp1
 
         private void btnPower_Click(object sender, EventArgs e)
         {
-            edtMessage.Text= "O-oooooooooo AAAAE-A-A-I-A-U-JO-oooooooooooo AAE-O-A-A-U-U-A-E-eee-ee-eee AAAAE-A-E-I-E-A-JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA";
+            edtMessage.Text = "O-oooooooooo AAAAE-A-A-I-A-U-JO-oooooooooooo AAE-O-A-A-U-U-A-E-eee-ee-eee AAAAE-A-E-I-E-A-JO-ooo-oo-oo-oo EEEEO-A-AAA-AAAA";
             btnSend_Click(sender, e);
         }
 
@@ -662,7 +690,7 @@ namespace WindowsFormsApp1
         private void timer1_Tick(object sender, EventArgs e)
         {
             string html = string.Empty;
-            string url = @"https://api.twitch.tv/kraken/streams/"+C_ID;
+            string url = @"https://api.twitch.tv/kraken/streams/" + C_ID;
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(url);
             request.Accept = "application /vnd.twitchtv.v5+json";
             request.Headers.Add("Client-ID", "0uwepl5f8n0fv7hcs282589wx76phc");
@@ -693,6 +721,11 @@ namespace WindowsFormsApp1
             {
                 System.Diagnostics.Process.Start(lblLink.Text);
             }
+        }
+
+        private void webChat_DocumentCompleted(object sender, WebBrowserDocumentCompletedEventArgs e)
+        {
+
         }
     }
 }

@@ -97,6 +97,7 @@
             this.webChat.ScriptErrorsSuppressed = true;
             this.webChat.Size = new System.Drawing.Size(434, 634);
             this.webChat.TabIndex = 14;
+            this.webChat.DocumentCompleted += new System.Windows.Forms.WebBrowserDocumentCompletedEventHandler(this.webChat_DocumentCompleted);
             // 
             // gbLogin
             // 
@@ -361,7 +362,7 @@
             // 
             // tmStream
             // 
-            this.tmStream.Interval = 10000;
+            this.tmStream.Interval = 1000;
             this.tmStream.Tick += new System.EventHandler(this.timer1_Tick);
             // 
             // RichLog
